@@ -4,6 +4,7 @@
         "gorm",
         "joho",
         "labstack",
+        "oklog",
         "omohide",
         "SUPABASE"
     ]
