@@ -3,17 +3,19 @@ package models
 
 import (
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type Post struct {
-	ID        string    `json:"id" gorm:"primaryKey"`
-	UserID    string    `json:"user_id" gorm:"not null"`
-	Text      string    `json:"text" gorm:"not null"`
-	Latitude  float64   `json:"latitude" gorm:"not null"`
-	Longitude float64   `json:"longitude" gorm:"not null"`
-	ImageUrls []string  `json:"image_urls" gorm:"type:text[]"`
-	CreatedAt time.Time `json:"created_at" gorm:"not null"`
-	UpdatedAt time.Time `json:"updated_at" gorm:"not null"`
+	ID        string         `json:"id" gorm:"primaryKey"`
+	UserID    string         `json:"user_id" gorm:"not null"`
+	Text      string         `json:"text" gorm:"not null"`
+	Latitude  float64        `json:"latitude" gorm:"not null"`
+	Longitude float64        `json:"longitude" gorm:"not null"`
+	ImageUrls pq.StringArray `json:"image_urls" gorm:"type:text[]"`
+	CreatedAt time.Time      `json:"created_at" gorm:"not null"`
+	UpdatedAt time.Time      `json:"updated_at" gorm:"not null"`
 }
 
 type CreatePostRequest struct {

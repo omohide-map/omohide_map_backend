@@ -7,9 +7,10 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/omohide_map_backend/internal/db"
 	"github.com/omohide_map_backend/internal/handlers"
-	"github.com/omohide_map_backend/internal/middleware"
+	omohideMiddleware "github.com/omohide_map_backend/internal/middleware"
 	"github.com/omohide_map_backend/internal/models"
 	"github.com/omohide_map_backend/internal/services"
 )
@@ -28,12 +29,15 @@ func main() {
 
 	e := echo.New()
 
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Omohide Map API running!")
 	})
 
 	api := e.Group("/api")
-	api.Use(middleware.JWTMiddleware())
+	api.Use(omohideMiddleware.JWTMiddleware())
 
 	postService := services.NewPostService(database)
 	postHandler := handlers.NewPostHandler(postService)
