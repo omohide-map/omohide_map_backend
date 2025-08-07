@@ -1,4 +1,4 @@
-package repository
+package repositories
 
 import (
 	"context"
@@ -37,7 +37,7 @@ func (r *PostRepository) GetByID(ctx context.Context, id string) (*models.Post, 
 }
 
 func (r *PostRepository) GetByUserID(ctx context.Context, userID string) ([]*models.Post, error) {
-	iter := r.firestoreClient.Collection("posts").Where("UserID", "==", userID).Documents(ctx)
+	iter := r.firestoreClient.Collection("posts").Where("userID", "==", userID).Documents(ctx)
 	defer iter.Stop()
 
 	var posts []*models.Post

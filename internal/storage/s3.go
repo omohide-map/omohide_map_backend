@@ -18,7 +18,12 @@ type S3Storage struct {
 	bucketName string
 }
 
-func NewS3Storage(bucketName string) (*S3Storage, error) {
+func NewS3Storage() (*S3Storage, error) {
+	bucketName := os.Getenv("AWS_S3_BUCKET")
+	if bucketName == "" {
+		return nil, fmt.Errorf("AWS_S3_BUCKET environment variable is required")
+	}
+
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(os.Getenv("AWS_REGION")),
 	)

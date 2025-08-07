@@ -6,17 +6,17 @@ import (
 	"time"
 
 	"github.com/omohide_map_backend/internal/models"
-	"github.com/omohide_map_backend/internal/repository"
+	"github.com/omohide_map_backend/internal/repository/repositories"
 	"github.com/omohide_map_backend/internal/storage"
 	"github.com/omohide_map_backend/pkg/id"
 )
 
 type PostService struct {
-	postRepo  *repository.PostRepository
+	postRepo  *repositories.PostRepository
 	s3Storage *storage.S3Storage
 }
 
-func NewPostService(postRepo *repository.PostRepository, s3Storage *storage.S3Storage) *PostService {
+func NewPostService(postRepo *repositories.PostRepository, s3Storage *storage.S3Storage) *PostService {
 	return &PostService{
 		postRepo:  postRepo,
 		s3Storage: s3Storage,

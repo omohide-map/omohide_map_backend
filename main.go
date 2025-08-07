@@ -5,18 +5,16 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	firebase "firebase.google.com/go/v4"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/omohide_map_backend/internal/handler"
+	"github.com/omohide_map_backend/internal/di"
 	omohideMiddleware "github.com/omohide_map_backend/internal/middleware"
-	"github.com/omohide_map_backend/internal/repository"
-	"github.com/omohide_map_backend/internal/service"
-	"github.com/omohide_map_backend/internal/storage"
 	"github.com/omohide_map_backend/pkg/validator"
-	"google.golang.org/api/option"
 )
 
 func main() {
@@ -26,38 +24,12 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
 	}
-	// firebase
-	/// Authentication
-	opt := option.WithCredentialsFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
-	app, err := firebase.NewApp(ctx, nil, opt)
-	if err != nil {
-		log.Fatalf("error initializing app: %v", err)
-	}
-	authClient, err := app.Auth(ctx)
-	if err != nil {
-		log.Fatalf("app.Auth: %v", err)
-	}
 
-	/// Firestore
-	firestoreClient, err := app.Firestore(ctx)
+	// DIコンテナの初期化
+	container, err := di.NewContainer(ctx)
 	if err != nil {
-		log.Fatalf("app.Firestore: %v", err)
+		log.Fatalf("Failed to initialize DI container: %v", err)
 	}
-
-	// S3 Storage
-	bucketName := os.Getenv("AWS_S3_BUCKET")
-	if bucketName == "" {
-		log.Fatal("AWS_S3_BUCKET environment variable is required")
-	}
-	s3Storage, err := storage.NewS3Storage(bucketName)
-	if err != nil {
-		log.Fatalf("Failed to initialize S3 storage: %v", err)
-	}
-
-	// handler
-	postRepo := repository.NewPostRepository(firestoreClient)
-	postService := service.NewPostService(postRepo, s3Storage)
-	postHandler := handler.NewPostHandler(postService)
 
 	// echo
 	e := echo.New()
@@ -66,24 +38,50 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Validator = validator.New()
 
+	// sample
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Omohide Map API running!")
 	})
 
 	api := e.Group("/api")
-	api.Use(omohideMiddleware.JWTMiddleware(authClient))
+	api.Use(omohideMiddleware.JWTMiddleware(container.AuthClient))
 
 	api.GET("/health", func(c echo.Context) error {
 		return c.String(http.StatusOK, "JWT Token is valid")
 	})
 
-	api.POST("/post", postHandler.CreatePost)
+	// endpoints
+	api.POST("/post", container.PostHandler.CreatePost)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	e.Logger.Fatal(e.Start(":" + port))
-	defer firestoreClient.Close()
+	// グレースフルシャットダウンの設定
+	go func() {
+		if err := e.Start(":" + port); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatal("shutting down the server")
+		}
+	}()
+
+	// シグナル待機
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+	<-quit
+
+	// グレースフルシャットダウン
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
+	}
+
+	// DIコンテナのクリーンアップ
+	if err := container.Close(); err != nil {
+		log.Printf("Failed to close DI container: %v", err)
+	}
+
+	log.Println("Server gracefully stopped")
 }
