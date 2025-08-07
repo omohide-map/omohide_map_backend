@@ -32,8 +32,8 @@ func JWTMiddleware(client *auth.Client) echo.MiddlewareFunc {
 					"error": "Invalid token",
 				})
 			}
-			c.Set("user_id", token.UID)
-			c.Set("created_at", time.Now())
+			c.Set("userID", token.UID)
+			c.Set("requestTime", time.Now())
 			return next(c)
 		}
 	}

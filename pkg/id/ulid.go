@@ -6,8 +6,7 @@ import (
 	"time"
 )
 
-func GenerateUlid() string {
-	t := time.Now().UTC()
+func GenerateUlid(t time.Time) string {
 	entropy := ulid.Monotonic(rand.New(rand.NewSource(t.UnixNano())), 0)
 	return ulid.MustNew(ulid.Timestamp(t), entropy).String()
 }
