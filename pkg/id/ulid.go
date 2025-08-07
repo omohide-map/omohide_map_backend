@@ -1,5 +1,4 @@
-// Package utils provides utility functions for the application.
-package utils
+package id
 
 import (
 	"github.com/oklog/ulid/v2"
