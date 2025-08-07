@@ -37,6 +37,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Validator = validator.New()
+	e.HTTPErrorHandler = omohideMiddleware.CustomErrorHandler
 
 	// sample
 	e.GET("/", func(c echo.Context) error {

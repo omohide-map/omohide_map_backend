@@ -1,10 +1,13 @@
-package repositories
+package repository
 
 import (
 	"context"
 
 	"cloud.google.com/go/firestore"
 	"github.com/omohide_map_backend/internal/models"
+	appErrors "github.com/omohide_map_backend/pkg/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type PostRepository struct {
@@ -25,12 +28,15 @@ func (r *PostRepository) Create(ctx context.Context, post *models.Post) error {
 func (r *PostRepository) GetByID(ctx context.Context, id string) (*models.Post, error) {
 	doc, err := r.firestoreClient.Collection("posts").Doc(id).Get(ctx)
 	if err != nil {
-		return nil, err
+		if status.Code(err) == codes.NotFound {
+			return nil, appErrors.ResourceNotFound("Post")
+		}
+		return nil, appErrors.DatabaseError(err)
 	}
 
 	var post models.Post
 	if err := doc.DataTo(&post); err != nil {
-		return nil, err
+		return nil, appErrors.DatabaseError(err)
 	}
 
 	return &post, nil

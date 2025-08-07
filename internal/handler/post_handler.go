@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/omohide_map_backend/internal/models"
 	"github.com/omohide_map_backend/internal/service"
+	appErrors "github.com/omohide_map_backend/pkg/errors"
 )
 
 type PostHandler struct {
@@ -22,26 +22,26 @@ func NewPostHandler(postService *service.PostService) *PostHandler {
 func (h *PostHandler) CreatePost(c echo.Context) error {
 	var req models.CreatePostRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body")
+		return appErrors.InvalidRequest("Invalid request body")
 	}
 	if err := c.Validate(req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return appErrors.ValidationError(err.Error())
 	}
 
 	userID, ok := c.Get("userID").(string)
 	if !ok {
-		return echo.NewHTTPError(http.StatusUnauthorized, "User ID not found")
+		return appErrors.UserIDNotFound()
 	}
 
 	requestTime, ok := c.Get("requestTime").(time.Time)
 	if !ok {
-		return echo.NewHTTPError(http.StatusInternalServerError, "Request time not found")
+		return appErrors.RequestTimeNotFound()
 	}
 
 	post, err := h.postService.CreatePost(c.Request().Context(), userID, &req, requestTime)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 
-	return c.JSON(http.StatusCreated, post)
+	return c.JSON(201, post)
 }

@@ -6,17 +6,18 @@ import (
 	"time"
 
 	"github.com/omohide_map_backend/internal/models"
-	"github.com/omohide_map_backend/internal/repository/repositories"
+	"github.com/omohide_map_backend/internal/repository"
 	"github.com/omohide_map_backend/internal/storage"
+	appErrors "github.com/omohide_map_backend/pkg/errors"
 	"github.com/omohide_map_backend/pkg/id"
 )
 
 type PostService struct {
-	postRepo  *repositories.PostRepository
+	postRepo  *repository.PostRepository
 	s3Storage *storage.S3Storage
 }
 
-func NewPostService(postRepo *repositories.PostRepository, s3Storage *storage.S3Storage) *PostService {
+func NewPostService(postRepo *repository.PostRepository, s3Storage *storage.S3Storage) *PostService {
 	return &PostService{
 		postRepo:  postRepo,
 		s3Storage: s3Storage,
@@ -50,7 +51,7 @@ func (s *PostService) CreatePost(ctx context.Context, userID string, req *models
 	}
 
 	if err := s.postRepo.Create(ctx, post); err != nil {
-		return nil, err
+		return nil, appErrors.DatabaseError(err)
 	}
 
 	return post, nil

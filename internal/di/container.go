@@ -9,19 +9,19 @@ import (
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
 	"github.com/omohide_map_backend/internal/handler"
-	"github.com/omohide_map_backend/internal/repository/repositories"
+	"github.com/omohide_map_backend/internal/repository"
 	"github.com/omohide_map_backend/internal/service"
 	"github.com/omohide_map_backend/internal/storage"
 	"google.golang.org/api/option"
 )
 
 type Container struct {
-	AuthClient     *auth.Client
+	AuthClient      *auth.Client
 	FirestoreClient *firestore.Client
-	S3Storage      *storage.S3Storage
-	PostRepository *repositories.PostRepository
-	PostService    *service.PostService
-	PostHandler    *handler.PostHandler
+	S3Storage       *storage.S3Storage
+	PostRepository  *repository.PostRepository
+	PostService     *service.PostService
+	PostHandler     *handler.PostHandler
 }
 
 func NewContainer(ctx context.Context) (*Container, error) {
@@ -56,7 +56,7 @@ func NewContainer(ctx context.Context) (*Container, error) {
 	}
 
 	// Repositories
-	postRepo := repositories.NewPostRepository(firestoreClient)
+	postRepo := repository.NewPostRepository(firestoreClient)
 
 	// Services
 	postService := service.NewPostService(postRepo, s3Storage)

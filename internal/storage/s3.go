@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	appErrors "github.com/omohide_map_backend/pkg/errors"
 )
 
 type S3Storage struct {
@@ -21,14 +22,14 @@ type S3Storage struct {
 func NewS3Storage() (*S3Storage, error) {
 	bucketName := os.Getenv("AWS_S3_BUCKET")
 	if bucketName == "" {
-		return nil, fmt.Errorf("AWS_S3_BUCKET environment variable is required")
+		return nil, appErrors.EnvironmentVariableError("AWS_S3_BUCKET")
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(os.Getenv("AWS_REGION")),
 	)
 	if err != nil {
-		return nil, err
+		return nil, appErrors.StorageError(err)
 	}
 
 	client := s3.NewFromConfig(cfg)
@@ -49,7 +50,7 @@ func (s *S3Storage) UploadBase64Image(ctx context.Context, key string, base64Ima
 
 	data, err := base64.StdEncoding.DecodeString(base64Data)
 	if err != nil {
-		return "", err
+		return "", appErrors.ImageProcessingError(err)
 	}
 
 	_, err = s.client.PutObject(ctx, &s3.PutObjectInput{
@@ -59,7 +60,7 @@ func (s *S3Storage) UploadBase64Image(ctx context.Context, key string, base64Ima
 		ContentType: aws.String("image/jpeg"),
 	})
 	if err != nil {
-		return "", err
+		return "", appErrors.StorageError(err)
 	}
 
 	url := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", s.bucketName, key)
