@@ -64,3 +64,36 @@ func (h *PostHandler) GetPosts(c echo.Context) error {
 
 	return c.JSON(200, posts)
 }
+
+func (h *PostHandler) GetMyPosts(c echo.Context) error {
+	userID, ok := c.Get("userID").(string)
+	if !ok {
+		return appErrors.UserIDNotFound()
+	}
+
+	posts, err := h.postService.GetPostsByUserID(c.Request().Context(), userID)
+	if err != nil {
+		return err
+	}
+
+	// 空の配列の場合でも正しく返す
+	if posts == nil {
+		posts = []*models.Post{}
+	}
+
+	return c.JSON(200, posts)
+}
+
+func (h *PostHandler) GetPostByID(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return appErrors.InvalidRequest("Post ID is required")
+	}
+
+	post, err := h.postService.GetPostByID(c.Request().Context(), id)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(200, post)
+}

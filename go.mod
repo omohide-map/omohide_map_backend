@@ -14,6 +14,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/oklog/ulid/v2 v2.1.1
 	google.golang.org/api v0.231.0
+	google.golang.org/grpc v1.72.0
 )
 
 require (
@@ -91,6 +92,5 @@ require (
 	google.golang.org/genproto v0.0.0-20250505200425-f936aa4a68b2 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250505200425-f936aa4a68b2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250505200425-f936aa4a68b2 // indirect
-	google.golang.org/grpc v1.72.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 )

@@ -65,3 +65,21 @@ func (s *PostService) GetPosts(ctx context.Context, req *models.GetPostsRequest)
 
 	return posts, nil
 }
+
+func (s *PostService) GetPostsByUserID(ctx context.Context, userID string) ([]*models.Post, error) {
+	posts, err := s.postRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, appErrors.DatabaseError(err)
+	}
+
+	return posts, nil
+}
+
+func (s *PostService) GetPostByID(ctx context.Context, id string) (*models.Post, error) {
+	post, err := s.postRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return post, nil
+}
