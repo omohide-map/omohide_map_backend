@@ -15,6 +15,7 @@ import (
 	"github.com/omohide_map_backend/internal/di"
 	omohideMiddleware "github.com/omohide_map_backend/internal/middleware"
 	"github.com/omohide_map_backend/pkg/validator"
+	"github.com/omohide_map_backend/routes"
 )
 
 func main() {
@@ -47,12 +48,7 @@ func main() {
 	api := e.Group("/api")
 	api.Use(omohideMiddleware.JWTMiddleware(container.AuthClient))
 
-	api.GET("/health", func(c echo.Context) error {
-		return c.String(http.StatusOK, "JWT Token is valid")
-	})
-
-	// endpoints
-	api.POST("/post", container.PostHandler.CreatePost)
+	routes.RegisterMainRoutes(api, container)
 
 	port := os.Getenv("PORT")
 	if port == "" {

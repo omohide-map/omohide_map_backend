@@ -2,10 +2,13 @@ package repository
 
 import (
 	"context"
+	"log"
 
 	"cloud.google.com/go/firestore"
 	"github.com/omohide_map_backend/internal/models"
 	appErrors "github.com/omohide_map_backend/pkg/errors"
+	"github.com/omohide_map_backend/pkg/geo"
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -43,7 +46,7 @@ func (r *PostRepository) GetByID(ctx context.Context, id string) (*models.Post, 
 }
 
 func (r *PostRepository) GetByUserID(ctx context.Context, userID string) ([]*models.Post, error) {
-	iter := r.firestoreClient.Collection("posts").Where("userID", "==", userID).Documents(ctx)
+	iter := r.firestoreClient.Collection("posts").Where("user_id", "==", userID).Documents(ctx)
 	defer iter.Stop()
 
 	var posts []*models.Post
@@ -60,5 +63,67 @@ func (r *PostRepository) GetByUserID(ctx context.Context, userID string) ([]*mod
 		posts = append(posts, &post)
 	}
 
+	return posts, nil
+}
+
+func (r *PostRepository) GetPostsWithFilters(ctx context.Context, req *models.GetPostsRequest) ([]*models.Post, error) {
+	log.Printf("GetPostsWithFilters called with req: %+v", req)
+
+	// OrderByを復活させる
+	query := r.firestoreClient.Collection("posts").OrderBy("created_at", firestore.Desc)
+
+	// ページネーション
+	limit := 20 // デフォルト
+	if req.Limit != nil && *req.Limit > 0 && *req.Limit <= 100 {
+		limit = *req.Limit
+	}
+
+	offset := 0
+	if req.Page != nil && *req.Page > 0 {
+		offset = (*req.Page - 1) * limit
+	}
+
+	log.Printf("Pagination: limit=%d, offset=%d", limit, offset)
+	query = query.Limit(limit).Offset(offset)
+
+	iter := query.Documents(ctx)
+	defer iter.Stop()
+
+	var posts []*models.Post
+	docCount := 0
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			log.Printf("Iterator done. Total documents fetched: %d", docCount)
+			break
+		}
+		if err != nil {
+			log.Printf("Error fetching document: %v", err)
+			return nil, err
+		}
+		docCount++
+
+		var post models.Post
+		if err := doc.DataTo(&post); err != nil {
+			log.Printf("Error converting document to Post struct: %v", err)
+			continue
+		}
+
+		log.Printf("Fetched post: ID=%s, UserID=%s", post.ID, post.UserID)
+
+		// 位置フィルタリング（メモリ内で処理）
+		// 緯度・経度・半径が全て有効な値の場合のみフィルタリング
+		if req.Latitude != nil && req.Longitude != nil && req.Radius != nil && *req.Radius > 0 {
+			distance := geo.CalculateDistance(*req.Latitude, *req.Longitude, post.Latitude, post.Longitude)
+			if distance > *req.Radius {
+				log.Printf("Post %s filtered out by distance: %f > %f", post.ID, distance, *req.Radius)
+				continue
+			}
+		}
+
+		posts = append(posts, &post)
+	}
+
+	log.Printf("Returning %d posts", len(posts))
 	return posts, nil
 }

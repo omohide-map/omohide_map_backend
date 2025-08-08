@@ -45,3 +45,22 @@ func (h *PostHandler) CreatePost(c echo.Context) error {
 
 	return c.JSON(201, post)
 }
+
+func (h *PostHandler) GetPosts(c echo.Context) error {
+	var req models.GetPostsRequest
+	if err := c.Bind(&req); err != nil {
+		return appErrors.InvalidRequest("Invalid query parameters")
+	}
+
+	posts, err := h.postService.GetPosts(c.Request().Context(), &req)
+	if err != nil {
+		return err
+	}
+
+	// 空の配列の場合でも正しく返す
+	if posts == nil {
+		posts = []*models.Post{}
+	}
+
+	return c.JSON(200, posts)
+}

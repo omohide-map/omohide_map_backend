@@ -56,3 +56,12 @@ func (s *PostService) CreatePost(ctx context.Context, userID string, req *models
 
 	return post, nil
 }
+
+func (s *PostService) GetPosts(ctx context.Context, req *models.GetPostsRequest) ([]*models.Post, error) {
+	posts, err := s.postRepo.GetPostsWithFilters(ctx, req)
+	if err != nil {
+		return nil, appErrors.DatabaseError(err)
+	}
+
+	return posts, nil
+}
